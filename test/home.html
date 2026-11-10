@@ -110,6 +110,8 @@
   .cg { height: 696px; margin: 0 calc(50% - 50vw); overflow: hidden; position: relative; }
   .cg-hint { position: absolute; left: 64px; bottom: 16px; z-index: 2; margin: 0; padding: 8px 12px; background: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; }
   .cs-list { display: none; }
+  .w-dyn-bind-empty { display: none !important; }
+  .cs-list [data-p-case] > [data-p-case-field] { display: none; }   /* zoals case-studies_fields in Webflow */
   .cg-tile { position: relative; display: block; width: 300px; height: 300px; overflow: hidden; background: #d6d6d6; }
   .cg-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .cg-over { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,.05) 70%); color: #fff; opacity: 0; }
@@ -224,9 +226,21 @@
 @media (prefers-reduced-motion: no-preference) {
   html.w-mod-js:not(.wf-design-mode):not([data-p-ready]) :is([data-p-block], [data-p-rise], [data-p-clip], [data-p-product]) { visibility: hidden; animation: p-show 0s 3s forwards; }
 }
-html.w-mod-js:not(.wf-design-mode):not([data-p-ready]) :is([data-p-photos] img ~ img, [data-p-photos] div ~ div img, [data-p-tcard] ~ [data-p-tcard]) { visibility: hidden; animation: p-show 0s 3s forwards; }
+html.w-mod-js:not(.wf-design-mode):not([data-p-ready]) :is([data-p-photos] img ~ img, [data-p-photos] div ~ div img) { visibility: hidden; animation: p-show 0s 3s forwards; }
 @keyframes p-show { to { visibility: visible; } }
 html [data-p-case-modal]:not([data-p-open]), html [data-p-case-backdrop]:not([data-p-open]) { display: none; }
+/* Zonder code (home-v1.0.1): alleen de eerste testimonial; geen focus op de onzichtbare knoppen van een dichte productbalk */
+html:not(.wf-design-mode):not([data-p-ready]) :is([data-p-tcard] ~ [data-p-tcard], [data-p-product-detail]) { visibility: hidden; }
+/* Case studies zonder code: de CMS-lijst als rij tegels over het lege rastervlak, zijwaarts te scrollen; cases.js verbergt hem als het raster staat */
+html:not(.wf-design-mode) [data-p-cases-list] { display: block; position: relative; z-index: 3; height: 696px; margin: -696px calc(50% - 50vw) 0; overflow-x: auto; }
+html:not(.wf-design-mode) [data-p-cases-list] > * { display: flex; align-items: center; width: max-content; height: 100%; padding: 0 12px; }
+html:not(.wf-design-mode) [data-p-cases-list] [data-p-case] { flex: none; box-sizing: border-box; width: 348px; height: 348px; padding: 24px; }
+html:not(.wf-design-mode) [data-p-cases-list] [data-p-case-over] { opacity: 1; }
+@media screen and (max-width: 767px) {
+  html:not(.wf-design-mode) [data-p-cases-list] { height: 448px; margin-top: -448px; }
+  html:not(.wf-design-mode) [data-p-cases-list] [data-p-case] { width: 224px; height: 224px; padding: 12px; }
+}
+html.w-mod-js:not(.wf-design-mode):not([data-p-ready]) [data-p-cases-list] { visibility: hidden; animation: p-show 0s 3s forwards; }
 </style>
 </head>
 <body>
@@ -327,16 +341,17 @@ html [data-p-case-modal]:not([data-p-open]), html [data-p-case-backdrop]:not([da
   <div class="cs-in"><h2>Case studies</h2><div class="cs-intro"><p>Zie hoe organisaties met Profile Dynamics grip kregen op wat hun mensen drijft.</p></div></div>
   <div class="cg" data-p-cases-grid id="grid"><p class="cg-hint" data-p-cases-hint>Sleep om te verkennen</p></div>
   <!-- Verborgen CMS-lijst (Webflow: Collection List met display none) -->
-  <div class="cs-list" id="csList"></div>
+  <div class="cs-list" id="csList" data-p-cases-list><div role="list"></div></div>
   <script>
     [['hero-keuken', 'hero-techniek', 'drivers-a-man'], ['hero-bouw', 'drivers-b-dakterras', 'drivers-c-kantoor'], ['growth-gesprek', 'hero-gesprek-kleur', 'hero-postits'], ['hero-techniek', 'drivers-a-man', 'hero-keuken'], ['drivers-b-dakterras', 'drivers-c-kantoor', 'hero-bouw'], ['hero-gesprek-kleur', 'hero-postits', 'growth-gesprek'], ['drivers-a-man', 'hero-keuken', 'hero-techniek'], ['drivers-c-kantoor', 'hero-bouw', 'drivers-b-dakterras'], ['hero-postits', 'growth-gesprek', 'hero-gesprek-kleur']].forEach(function (p, i) {
       var n = ('0' + (i + 1)).slice(-2), img = function (f) { return '<img src="../../design/homepage/assets/img/' + f + '.jpg" alt="" loading="lazy">'; };
-      document.getElementById('csList').insertAdjacentHTML('beforeend',
+      document.querySelector('#csList > div').insertAdjacentHTML('beforeend',
         '<div class="w-dyn-item" data-p-case>' +
           '<a class="cg-tile" href="/case-studies/test-' + n + '" data-p-case-tile>' + img(p[0]) + '<span class="cg-over" data-p-case-over><span class="cg-tag">Case study</span><span class="cg-title">Titel van case study ' + n + '</span></span></a>' +
           '<div data-p-case-field="title">Titel van case study ' + n + '</div><div data-p-case-field="tag">Case study</div><div data-p-case-field="org">Organisatie ' + n + ' · Sector</div>' +
           '<div data-p-case-field="text">Concepttekst van case ' + n + '.</div><div data-p-case-field="challenge">Uitdaging van case ' + n + '.</div><div data-p-case-field="approach">Aanpak van case ' + n + '.</div><div data-p-case-field="result">Resultaat van case ' + n + '.</div>' +
-          '<div data-p-case-field="photos">' + p.map(img).join('') + '</div>' +
+          // Foto 4 leeg, zoals Webflow een leeg beeldveld publiceert
+          '<div data-p-case-field="photos">' + p.map(img).join('') + '<img src="../../design/homepage/assets/img/hero-keuken.jpg" alt="" class="w-dyn-bind-empty"></div>' +
         '</div>');
     });
   </script>

@@ -96,26 +96,29 @@ export function init(container, a) {
       function activate(p) {
         if (p === active) return;
         active = p;
-        X.forEach(function (x) { x.p.setAttribute('aria-expanded', String(x.p === p)); look(x, x.p === p ? 'on' : 'off'); });
+        X.forEach(function (x) { look(x, x.p === p ? 'on' : 'off'); });
         spring(p);
       }
       function clear() {
         if (!active) return;
         active = null;
-        X.forEach(function (x) { x.p.setAttribute('aria-expanded', 'false'); look(x, 'rest'); });
+        X.forEach(function (x) { look(x, 'rest'); });
         spring(null);
       }
       function reset() {
         active = null;
         cur = cur.map(function () { return 1; }); vel = vel.map(function () { return 0; }); tgt = cur.slice();
-        panels.forEach(function (p) { p.style.flexGrow = ''; p.setAttribute('aria-expanded', 'false'); });
+        panels.forEach(function (p) { p.style.flexGrow = ''; });
         base();
       }
 
       base();
+      // Naam voor de schermlezer (cijfer en namen zijn aria-hidden). Geen aria-expanded: dat hoort niet bij een article, en de
+      // inhoud van het detail is voor een schermlezer altijd leesbaar; open en dicht is alleen beeld (review #12)
+      var named = X.filter(function (x) { return x.label && !x.p.hasAttribute('aria-label'); });
+      named.forEach(function (x) { x.p.setAttribute('aria-label', x.label.textContent.trim()); });
       panels.forEach(function (p) {
         if (!p.hasAttribute('tabindex')) p.setAttribute('tabindex', '0');
-        p.setAttribute('aria-expanded', 'false');
         a.listen(p, 'pointerenter', function (e) { if (e.pointerType === 'mouse') activate(p); });
         a.listen(p, 'focusin', function () { activate(p); });
         a.listen(p, 'pointerdown', function () { p._pWas = p === active; });
@@ -157,7 +160,8 @@ export function init(container, a) {
       }
       a.undo(function () {
         gsap.set(all, { clearProps: PROPS });
-        panels.forEach(function (p) { p.style.flexGrow = ''; p.style.clipPath = ''; p.removeAttribute('aria-expanded'); });
+        panels.forEach(function (p) { p.style.flexGrow = ''; p.style.clipPath = ''; });
+        named.forEach(function (x) { x.p.removeAttribute('aria-label'); });
       });
     });
   });

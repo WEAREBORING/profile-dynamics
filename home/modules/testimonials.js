@@ -18,10 +18,25 @@ export function init(container, a) {
         off = cs.backgroundColor; on = cs.color;
         a.undo(function () { dots.slice(1).forEach(function (d) { d.remove(); }); extra.forEach(function (d) { first.parentNode.appendChild(d); }); gsap.set(first, { clearProps: 'backgroundColor' }); });
       }
-      cards[0].parentNode.setAttribute('aria-live', 'polite');
+      var list = cards[0].parentNode, listRole = list.getAttribute('role');
+      list.setAttribute('aria-live', 'polite');
+      // Kaarten als dia's (review #11); de Webflow-lijst verliest zijn role="list", want een lijst mag alleen listitems bevatten
+      list.removeAttribute('role');
+      var roles = cards.map(function (c) { return c.getAttribute('role'); });
       cards.forEach(function (c, i) {
         c.setAttribute('aria-hidden', String(i !== 0));
+        c.setAttribute('role', 'group');
+        c.setAttribute('aria-roledescription', 'slide');
+        c.setAttribute('aria-label', (i + 1) + ' van ' + cards.length);
         if (i) gsap.set(c, { autoAlpha: 0, x: 16 });
+      });
+      a.undo(function () {
+        if (listRole) list.setAttribute('role', listRole);
+        list.removeAttribute('aria-live');
+        cards.forEach(function (c, i) {
+          if (roles[i]) c.setAttribute('role', roles[i]); else c.removeAttribute('role');
+          c.removeAttribute('aria-roledescription'); c.removeAttribute('aria-label');
+        });
       });
       dots.forEach(function (d, i) { gsap.set(d, { backgroundColor: i ? off : on }); });
       function show(n) {

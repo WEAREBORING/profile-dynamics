@@ -6,7 +6,9 @@
    (data-p-case-over) komt in beeld. Modal (data-p-case-modal, met data-p-case-backdrop): openen met een klik of Enter, dicht met
    de knop (data-p-case-close), de donkere laag of Escape; vorige en volgende (data-p-prev, data-p-next, pijltjestoetsen); foto's
    wisselen elke 4 s; focus blijft in de modal en gaat bij sluiten terug naar de tegel; de pagina scrolt niet zolang hij open is
-   (ook lenis.stop()). Blokken en tekst in de modal (data-p-block, data-p-rise) spelen bij openen en wisselen opnieuw af. */
+   (ook lenis.stop()). Blokken en tekst in de modal (data-p-block, data-p-rise) spelen bij openen en wisselen opnieuw af.
+   Toetsenbord: één tabstop per case; een tegel met focus schuift in beeld en de drift staat stil. Zonder code toont CSS - Home
+   de CMS-lijst (data-p-cases-list) als rij tegels; de code verbergt hem als het raster staat. */
 var DRIFT = 24, DRAG = 1, WHEEL = 0.75, FOLLOW = 0.14, FLICK = 10, PHOTO_S = 4;
 // Kleurensets van de blokken in de modal per case (case-nummer mod 4), zoals data-pal in de demo
 var PAL = [['yellow', 'green', 'purple'], ['orange', 'light-blue', 'red'], ['light-blue', 'yellow', 'orange'], ['red', 'purple', 'green']];
@@ -23,7 +25,8 @@ export function init(container, a) {
         var c = { tile: item.querySelector('[data-p-case-tile]'), text: {}, photos: [] };
         [].forEach.call(item.querySelectorAll('[data-p-case-field]'), function (f) {
           var k = f.getAttribute('data-p-case-field');
-          if (k === 'photos') c.photos = [].slice.call(f.querySelectorAll('img'));
+          // Webflow publiceert een leeg beeldveld als img.w-dyn-bind-empty en een verborgen element met .w-condition-invisible
+          if (k === 'photos') c.photos = [].filter.call(f.querySelectorAll('img'), function (img) { return !img.closest('.w-dyn-bind-empty, .w-condition-invisible'); });
           else c.text[k] = f.textContent.trim();
         });
         return c;
@@ -40,9 +43,14 @@ export function init(container, a) {
       grid.style.cursor = 'grab';
       if (getComputedStyle(grid).position === 'static') grid.style.position = 'relative';
       a.undo(function () { collection.remove(); grid.style.cssText = gridStyle; });
+      // Zonder code staat de CMS-lijst als rij tegels over het vlak (CSS - Home); nu het raster er is, weg
+      var list = section.querySelector('[data-p-cases-list]');
+      if (list) { list.style.display = 'none'; a.undo(function () { list.style.display = ''; }); }
+      // Het vlak scrolt nooit zelf: de browser schuift het (overflow hidden) anders naar een tegel met focus
+      a.listen(grid, 'scroll', function () { grid.scrollLeft = grid.scrollTop = 0; });
 
       var PITCH = 348, W = 0, H = 0, cx = 0, cy = 0, tx = 0, ty = 0, phase = 0, rows = [], built = false, running = false, lastT = 0, visible = false;
-      var down = false, moved = false, sx = 0, sy = 0, lx = 0, ly = 0, lastDx = 0, lastDy = 0;
+      var down = false, moved = false, sx = 0, sy = 0, lx = 0, ly = 0, lastDx = 0, lastDy = 0, focused = false;
       function tile(i, focusable) {
         var cell = document.createElement('div');
         var pad = wide.matches ? 24 : 12;
@@ -70,23 +78,30 @@ export function init(container, a) {
         W = cols * PITCH; H = nrows * PITCH;
         collection.textContent = '';
         rows = [];
+        // Eén tabstop per case: de eerste tegel van elke case in de eerste kopie (review #1)
+        var seen = {};
         for (var l = 0; l < 2; l++) {
-          var list = document.createElement('div');
-          list.style.cssText = 'position:absolute;left:0;width:0;top:' + (l * H) + 'px;height:' + H + 'px';
-          if (l) list.setAttribute('aria-hidden', 'true');
+          var copy = document.createElement('div');
+          copy.style.cssText = 'position:absolute;left:0;width:0;top:' + (l * H) + 'px;height:' + H + 'px';
+          if (l) copy.setAttribute('aria-hidden', 'true');
           for (var r = 0; r < nrows; r++) {
             var row = document.createElement('div');
             row.style.cssText = 'position:absolute;left:0;display:flex;will-change:transform;top:' + (r * PITCH) + 'px';
-            for (var c = 0; c < cols * 2; c++) row.appendChild(tile((r * cols + (c % cols)) % CASES.length, l === 0 && c < cols));
-            list.appendChild(row);
+            for (var c = 0; c < cols * 2; c++) {
+              var i = (r * cols + (c % cols)) % CASES.length, focus = l === 0 && c < cols && !seen[i];
+              var cell = row.appendChild(tile(i, focus));
+              if (focus) { seen[i] = true; cell.firstChild._pPos = { c: c, r: r, odd: r % 2 === 1 }; }
+            }
+            copy.appendChild(row);
             rows.push({ el: row, odd: r % 2 === 1 });
           }
-          collection.appendChild(list);
+          collection.appendChild(copy);
         }
         if (!built) { cx = tx = PITCH * 0.25; cy = ty = PITCH; built = true; }
         apply();
       }
-      function wrap(v, m) { return ((v % m) + m) % m; }
+      // Een halve pixel voor de naad telt als 0: een tegel met focus op de rand (eerste kolom of rij) springt dan niet naar de kopie
+      function wrap(v, m) { v = ((v % m) + m) % m; return v > m - 0.5 ? v - m : v; }
       function apply() {
         collection.style.transform = 'translate3d(0,' + (-wrap(cy, H)).toFixed(1) + 'px,0)';
         rows.forEach(function (q) {
@@ -94,7 +109,18 @@ export function init(container, a) {
           q.el.style.transform = 'translate3d(' + (-wrap(off, W)).toFixed(1) + 'px,0,0)';
         });
       }
-      function drifting() { return visible && !open && !down && !reduce.matches; }
+      function drifting() { return visible && !open && !down && !focused && !reduce.matches; }
+      // Toetsenbord: een tegel met focus die niet helemaal in beeld staat, schuift naar het midden (of zo ver als het wikkelen toelaat)
+      function near(d, m) { return d - Math.round(d / m) * m; }
+      function into(el) {
+        var p = el._pPos;
+        if (!p) return;
+        var gw = grid.clientWidth, gh = grid.clientHeight, ox = tx + (p.odd ? PITCH / 2 + phase : -phase);
+        var x = p.c * PITCH - wrap(ox, W), y = p.r * PITCH - wrap(ty, H);
+        if (x < -1 || x > gw - PITCH + 1) tx += near(Math.max(0, p.c * PITCH - (gw - PITCH) / 2) - wrap(ox, W), W);
+        if (y < -1 || y > gh - PITCH + 1) ty += near(Math.max(0, p.r * PITCH - (gh - PITCH) / 2) - wrap(ty, H), H);
+        kick();
+      }
       function loop(now) {
         var dt = lastT ? Math.min(64, now - lastT) : 16;
         lastT = now;
@@ -159,8 +185,18 @@ export function init(container, a) {
       }
       a.listen(collection, 'mouseover', function (e) { var el = tileOf(e.target); if (el && mouse.matches && !el.contains(e.relatedTarget)) hover(el, true); });
       a.listen(collection, 'mouseout', function (e) { var el = tileOf(e.target); if (el && mouse.matches && !el.contains(e.relatedTarget)) hover(el, false); });
-      a.listen(collection, 'focusin', function (e) { var el = tileOf(e.target); if (el) hover(el, true); });
-      a.listen(collection, 'focusout', function (e) { var el = tileOf(e.target); if (el) hover(el, false); });
+      a.listen(collection, 'focusin', function (e) {
+        var el = tileOf(e.target);
+        if (!el) return;
+        hover(el, true);
+        // Alleen bij focus met het toetsenbord stopt de drift en schuift het raster; een klik met de muis laat alles staan
+        if (el.matches(':focus-visible')) { focused = true; into(el); }
+      });
+      a.listen(collection, 'focusout', function (e) {
+        var el = tileOf(e.target);
+        if (el) hover(el, false);
+        if (!collection.contains(e.relatedTarget)) { focused = false; kick(); }
+      });
 
       /* ---------- modal ---------- */
       var modal = section.querySelector('[data-p-case-modal]'), backdrop = section.querySelector('[data-p-case-backdrop]');

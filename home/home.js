@@ -1,6 +1,7 @@
-/* Profile Dynamics home.js v1.0.0: beweging van de pagina home-nieuw. Bron: home/home.js in WEAREBORING/profile-dynamics.
+/* Profile Dynamics home.js v1.0.1: beweging van de pagina home-nieuw. Bron: home/home.js in WEAREBORING/profile-dynamics.
    Laadt alleen de modules waarvan het attribuut op de pagina staat (tabel "modules"), van dezelfde tag. De code leest alleen
-   data-p-*-attributen, nooit classnamen. Zet html[data-p-ready] als alles klaarstaat; de css in "CSS - Home" verbergt tot dan
+   data-p-*-attributen, geen eigen classnamen; de enige classes zijn twee statusclasses van Webflow (w-dyn-bind-empty en
+   w-condition-invisible, in cases.js). Zet html[data-p-ready] als alles klaarstaat; de css in "CSS - Home" verbergt tot dan
    wat binnenkomt (zie docs/code.md in de projectmap). */
 var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 var html = document.documentElement;

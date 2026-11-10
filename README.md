@@ -56,7 +56,7 @@ In Webflow, Page settings van `home-nieuw` > Custom code > Before `</body>`:
 <script type="module" src="https://cdn.jsdelivr.net/gh/WEAREBORING/profile-dynamics@home-vX.Y.Z/home/home.min.js"></script>
 ```
 
-- De code leest alleen `data-p-*`-attributen, nooit classnamen. GSAP komt van de site (3.12.2); ontbreekt hij, dan laadt `home.js` dezelfde versie. Lenis van de site (`let lenis`) wordt gestopt zolang de case-modal open is.
+- De code leest alleen `data-p-*`-attributen, geen eigen classnamen; de enige classes zijn de Webflow-statusclasses `w-dyn-bind-empty` en `w-condition-invisible` (lege of verborgen CMS-beelden in `cases.js`). GSAP komt van de site (3.12.2); ontbreekt hij, dan laadt `home.js` dezelfde versie. Lenis van de site (`let lenis`) wordt gestopt zolang de case-modal open is.
 - Wat binnenkomt wordt tot `data-p-ready` verborgen door de css in de embed `CSS - Home`. Die css, het hookcontract en de easing staan in `docs/code.md` in de projectmap.
 - Testen: serveer de projectmap (niet alleen `site-code/`, de testpagina haalt beelden uit `design/homepage/`), bijvoorbeeld `python3 -m http.server 8767 --bind 127.0.0.1`, en open `http://127.0.0.1:8767/site-code/test/home.html`. Bovenaan staat "geladen, geen fouten" als alles goed gaat.
 
