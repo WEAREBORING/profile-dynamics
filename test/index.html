@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>site.js test</title>
+<link rel="stylesheet" href="../site.css">
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; }
+  .card { display: inline-block; padding: 1rem; border: 1px solid #ccc; }
+  #result { margin-top: 2rem; font-weight: bold; }
+  .panel, .menu { display: none; }
+</style>
+</head>
+<body>
+<p>Copyright <span data-p-year>2000</span></p>
+
+<div data-p-form-name="testformulier | Test" data-p-form-redirect="/bedankt">
+  <form data-name="Oude naam"><input name="naam"></form>
+</div>
+<div data-p-form-name="extern" data-p-form-redirect="//evil.example/x">
+  <form data-name="Oude naam"><input name="naam"></form>
+</div>
+
+<a class="card" href="#" data-p-hover>Hover mij <span data-p-hover-x="0.5rem">&rarr;</span></a>
+
+<nav data-p-nav>
+  <div data-p-dropdown>
+    <button data-p-dropdown-toggle aria-expanded="false">Diensten</button>
+    <div class="panel" data-p-dropdown-panel><a href="#">Link</a></div>
+  </div>
+  <button data-p-nav-toggle aria-expanded="false">Menu</button>
+  <div class="menu" data-p-nav-menu><a href="#">Link</a></div>
+</nav>
+
+<p id="result">Bezig...</p>
+
+<script src="../site.js"></script>
+<script>
+  // Lokale controle van de modules: open dit bestand in een browser (de hover controleer je met de muis)
+  var forms = document.querySelectorAll('form');
+  var checks = {
+    jaartal: document.querySelector('[data-p-year]').textContent === String(new Date().getFullYear()),
+    formuliernaam: forms[0].getAttribute('data-name') === 'testformulier | Test',
+    redirect: forms[0].getAttribute('data-redirect') === '/bedankt',
+    'externe redirect geweigerd': !forms[1].hasAttribute('data-redirect')
+  };
+  var dropToggle = document.querySelector('[data-p-dropdown-toggle]');
+  var dropPanel = document.querySelector('[data-p-dropdown-panel]');
+  var navToggle = document.querySelector('[data-p-nav-toggle]');
+  var navMenu = document.querySelector('[data-p-nav-menu]');
+  dropToggle.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }));
+  checks['dropdown opent'] = dropPanel.style.display === 'flex' && dropToggle.getAttribute('aria-expanded') === 'true';
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+  checks['Escape sluit de dropdown'] = dropPanel.style.display === '';
+  navToggle.click();
+  checks['mobiel menu opent'] = navMenu.style.display === 'flex';
+  document.body.click();
+  checks['klik buiten de nav sluit het menu'] = navMenu.style.display === '';
+  var failed = Object.keys(checks).filter(function (k) { return !checks[k]; });
+  document.getElementById('result').textContent = failed.length ? 'MISLUKT: ' + failed.join(', ') : 'Alle ' + Object.keys(checks).length + ' controles groen';
+</script>
+</body>
+</html>

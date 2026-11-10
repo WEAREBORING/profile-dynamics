@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="nl" class="w-mod-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>home.js test</title>
+<!-- Beelden en letters uit de projectmap (design/homepage): serveer de projectmap, niet alleen site-code (zie README) -->
+<link rel="stylesheet" href="../../design/homepage/fonts/fonts.css">
+<style>
+  /* Nabootsing van de Webflow-classes in hun eindstand: geen transities, geen hover-animaties; alleen de hover-kleur van de knoppen */
+  :root { --color--brand--blue:#004196; --color--brand--light-blue:#1EB9D2; --color--brand--red:#F03C28; --color--brand--green:#23AA41; --color--brand--yellow:#FFF019; --color--brand--orange:#FFA023; --color--brand--purple:#87288C; --color--brand--grey:#F5F5F5; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Montserrat', system-ui, sans-serif; font-size: 16px; line-height: 1.5; color: #111; }
+  h1, h2, h3, p { margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  section { position: relative; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 0 64px; }
+  .note { padding: 8px 64px; background: #111; color: #fff; font-size: 12px; }
+  #result { font-weight: 700; }
+  /* Button - Pijl */
+  .btn { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; gap: 1em; white-space: nowrap; border: 1px solid var(--color--brand--blue); font: 600 20px/1.5 'Montserrat', sans-serif; padding: 12px 24px; color: var(--color--brand--blue); cursor: pointer; background: none; }
+  .btn-s { font-size: 14px; padding: 10px 20px; }
+  .btn-fill { position: absolute; inset: 0; z-index: -1; background: var(--color--brand--blue); opacity: 0; }
+  .btn-f { color: #fff; } .btn-f .btn-fill { opacity: 1; }
+  .btn-icon { width: 1em; height: 1em; flex: none; }
+  /* Element - Pijlknoppen */
+  .arrows { display: flex; gap: 16px; }
+  .arrow { position: relative; isolation: isolate; overflow: hidden; width: 56px; height: 56px; border: 0; padding: 0; display: grid; place-items: center; background: var(--color--brand--blue); color: #fff; cursor: pointer; }
+  .arrow .btn-icon { width: 20px; height: 20px; }
+  /* Hero */
+  .hero-in { display: flex; align-items: center; gap: 72px; padding: 120px 64px; max-width: 1440px; margin: 0 auto; }
+  .hero-content { flex: 1 1 0; max-width: 670px; }
+  .hero-content h1 { font-size: 64px; line-height: 1.1; margin-bottom: 24px; }
+  .hero-content p { font-size: 20px; margin-bottom: 32px; }
+  .hero-btns { display: flex; gap: 16px; }
+  .hc { --u: clamp(108px, 11.8vw, 170px); position: relative; flex: none; width: calc(var(--u) * 3); height: calc(var(--u) * 3); margin: 0 40px 0 auto; }
+  .hp { position: absolute; left: 0; top: 0; width: 66.6667%; height: 66.6667%; z-index: 2; overflow: hidden; background: #d6d6d6; }
+  .hp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .hb { position: absolute; width: 33.3333%; height: 33.3333%; z-index: 1; }
+  .hb-y { left: 66.6667%; top: 0; background: var(--color--brand--yellow); }
+  .hb-g { left: 66.6667%; top: 33.3333%; border: 9px solid var(--color--brand--green); }
+  .hb-p { left: 0; top: 66.6667%; background: var(--color--brand--purple); border-radius: 0 0 0 100%; transform-origin: 100% 0; }
+  .hb-o { left: -16.6667%; top: 0; width: 16.6667%; height: 16.6667%; background: var(--color--brand--orange); }
+  /* Probleem */
+  .problem-in { display: grid; grid-template-columns: 480px minmax(0, 1fr); gap: 88px; padding: 120px 64px; align-items: center; max-width: 1440px; margin: 0 auto; }
+  .problem h2 { font-size: 48px; line-height: 1.2; margin-bottom: 24px; }
+  .pt { order: -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile { aspect-ratio: 1 / 1; padding: 24px 22px; font-size: 20px; font-weight: 700; }
+  /* Logo's */
+  .logos { background: var(--color--brand--blue); color: #fff; padding: 64px 0; }
+  .logos h2 { font-size: 16px; text-align: center; margin-bottom: 40px; }
+  .marquee { display: flex; overflow: hidden; }
+  .mset { display: flex; flex: none; align-items: center; gap: 58px; padding-right: 58px; }
+  .mlogo { display: block; width: 86px; height: 86px; object-fit: contain; filter: brightness(0) invert(1); }
+  /* Drijfveren */
+  .pin { padding: 112px 0; }
+  .scene + .scene { margin-top: 136px; }
+  .inner { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; padding: 0 64px; }
+  .scene-rev .copy { order: -1; } .scene-rev .comp { justify-self: end; }
+  .copy h2 { font-size: 28px; line-height: 1.3; margin-bottom: 16px; }
+  .comp { --u: clamp(100px, 9.2vw, 132px); position: relative; width: calc(var(--u) * 4); height: calc(var(--u) * 2); }
+  .photo { position: absolute; z-index: 2; left: var(--u); top: 0; width: calc(var(--u) * 2); height: calc(var(--u) * 2); overflow: hidden; background: #d6d6d6; }
+  .photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .blk { position: absolute; z-index: 1; width: var(--u); height: var(--u); }
+  .blk svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .a1 { left: 0; top: 0; border: 9px solid var(--color--brand--blue); }
+  .a2 { left: 0; top: var(--u); background: var(--color--brand--green); border-radius: 0 0 0 100%; transform-origin: 100% 0; }
+  .a3 { left: calc(var(--u) * 3); top: var(--u); background: var(--color--brand--red); border-radius: 0 0 100% 0; transform-origin: 0 0; }
+  .b1 { left: calc(var(--u) * 3); top: 0; background: var(--color--brand--light-blue); }
+  .b2 { left: calc(var(--u) * 3); top: var(--u); transform-origin: 0 100%; }
+  .b3 { left: 0; top: var(--u); background: var(--color--brand--purple); }
+  /* Element - Zegel */
+  .seal { position: absolute; z-index: 3; width: var(--u); aspect-ratio: 1 / 1; pointer-events: none; }
+  .seal img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .seal-b { left: calc(var(--u) * -.55); top: calc(var(--u) * .25); }
+  /* Product Suite */
+  .ps { background: var(--color--brand--grey); }
+  .ps-in { padding: 100px 64px; max-width: 1440px; margin: 0 auto; }
+  .ps h2 { font-size: 48px; text-align: center; margin-bottom: 64px; }
+  .ps-stack { display: flex; width: 100%; aspect-ratio: 2 / 1; }
+  .ps-panel { --pad: clamp(24px, 3vw, 40px); position: relative; flex: 1 1 0%; min-width: 0; overflow: hidden; cursor: pointer; }
+  .ps-num { position: absolute; z-index: 2; top: 24px; left: var(--pad); white-space: nowrap; font-size: clamp(40px, 4.4vw, 64px); line-height: 1; font-weight: 700; }
+  .ps-label { position: absolute; left: var(--pad); bottom: 24px; font-size: clamp(22px, 2.2vw, 32px); line-height: 1.2; font-weight: 700; white-space: nowrap; }
+  .ps-v { writing-mode: vertical-rl; transform: rotate(180deg); }
+  .ps-detail { position: absolute; inset: 0 0 0 16px; background: #fff; overflow: hidden; }
+  .ps-dt { width: min(520px, 60vw); padding: calc(24px + clamp(40px, 4.4vw, 64px) + 24px) 36px 32px calc(var(--pad) - 6px); }
+  .ps-dt h3 { font-size: clamp(22px, 2.2vw, 32px); font-weight: 700; margin-bottom: 14px; }
+  .ps-dt ul { margin: 20px 0 24px; padding-left: 20px; }
+  .ps-ill { position: absolute; right: var(--pad); bottom: 32px; height: calc(68% * var(--r)); width: auto; }
+  .c-red { background: var(--color--brand--red); } .c-orange { background: var(--color--brand--orange); } .c-yellow { background: var(--color--brand--yellow); } .c-lb { background: var(--color--brand--light-blue); }
+  /* Groei */
+  .growth-in { padding: 100px 64px; text-align: center; max-width: 1440px; margin: 0 auto; }
+  .growth h2 { font-size: 48px; margin-bottom: 64px; }
+  .gc { --u: min(115px, 8vw); position: relative; width: calc(var(--u) * 7.5); height: calc(var(--u) * 4); margin: 0 auto; }
+  .gp { position: absolute; z-index: 5; left: calc(var(--u) * 3.5); top: 0; width: calc(var(--u) * 4); height: calc(var(--u) * 4); overflow: hidden; background: #d6d6d6; }
+  .gp img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .gb { position: absolute; transform-origin: 0 100%; }
+  .gb svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .g-turq { z-index: 3; left: calc(var(--u) * 1.5); top: calc(var(--u) * 2); width: calc(var(--u) * 2); height: calc(var(--u) * 2); background: var(--color--brand--light-blue); }
+  .g-oq { z-index: 2; left: calc(var(--u) * 1.5); top: 0; width: calc(var(--u) * 2); height: calc(var(--u) * 2); transform-origin: 100% 100%; }
+  .g-red { z-index: 4; left: calc(var(--u) * .5); top: calc(var(--u) * 2); width: var(--u); height: var(--u); background: var(--color--brand--red); border-radius: 0 0 100% 0; }
+  .g-pur { z-index: 5; left: calc(var(--u) * .5); top: calc(var(--u) * 3); width: var(--u); height: var(--u); background: var(--color--brand--purple); }
+  .g-yel { z-index: 6; left: 0; top: calc(var(--u) * 3.5); width: calc(var(--u) * .5); height: calc(var(--u) * .5); background: var(--color--brand--yellow); }
+  /* Case studies */
+  .cs { background: var(--color--brand--grey); overflow: hidden; }
+  .cs-in { padding: 100px 64px 0; max-width: 1440px; margin: 0 auto; }
+  .cs h2 { font-size: 48px; margin-bottom: 24px; }
+  .cs-intro { margin-bottom: 48px; max-width: 640px; }
+  .cg { height: 696px; margin: 0 calc(50% - 50vw); overflow: hidden; position: relative; }
+  .cg-hint { position: absolute; left: 64px; bottom: 16px; z-index: 2; margin: 0; padding: 8px 12px; background: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+  .cs-list { display: none; }
+  .cg-tile { position: relative; display: block; width: 300px; height: 300px; overflow: hidden; background: #d6d6d6; }
+  .cg-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cg-over { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,.05) 70%); color: #fff; opacity: 0; }
+  .cg-tag { font-size: 12px; font-weight: 700; text-transform: uppercase; opacity: .8; }
+  .cg-title { font-size: 18px; line-height: 1.3; font-weight: 700; }
+  .cd-bg { position: fixed; inset: 0; z-index: 99; background: rgba(0,0,0,.6); }
+  .cd { position: fixed; z-index: 100; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(1240px, calc(100% - 96px)); max-height: calc(100svh - 96px); overflow-y: auto; overscroll-behavior: contain; background: var(--color--brand--grey); padding-bottom: 48px; }
+  .cd-in { --u: clamp(120px, 11vw, 160px); display: grid; grid-template-columns: minmax(0, 1fr) calc(var(--u) * 3); gap: 64px; align-items: center; padding: 88px 64px 40px; }
+  .cd h3 { font-size: 48px; line-height: 1.2; margin: 8px 0; }
+  .cd-tag { display: inline-block; padding: 4px 8px; background: #fff; font-size: 12px; font-weight: 700; }
+  .cd-org { font-size: 14px; font-weight: 600; color: #6b6b6b; margin-bottom: 24px; }
+  .cd-text { margin-bottom: 32px; }
+  .cd-facts { margin: 0; display: grid; gap: 20px; }
+  .cd-facts dt { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--color--brand--blue); }
+  .cd-facts dd { margin: 0; }
+  .cd-gallery { position: relative; width: calc(var(--u) * 3); height: calc(var(--u) * 3); }
+  .cd-slides { position: absolute; left: 0; top: 0; z-index: 2; width: calc(var(--u) * 2); height: calc(var(--u) * 2); background: #d6d6d6; overflow: hidden; }
+  .cd-b { position: absolute; z-index: 1; width: var(--u); height: var(--u); }
+  .cd-b1 { left: calc(var(--u) * 2); top: 0; background: var(--color--brand--yellow); }
+  .cd-b2 { left: calc(var(--u) * 2); top: var(--u); border: 9px solid var(--color--brand--green); }
+  .cd-b3 { left: 0; top: calc(var(--u) * 2); background: var(--color--brand--purple); border-radius: 0 0 0 100%; transform-origin: 100% 0; }
+  .cd-close { position: absolute; right: 24px; top: 24px; z-index: 3; }
+  .cd-foot { display: flex; justify-content: flex-end; align-items: center; gap: 16px; padding: 0 64px; }
+  .cd-num { font-size: 14px; font-weight: 600; }
+  /* CTA */
+  .cta { background: var(--color--brand--blue); color: #fff; }
+  .cta-in { padding: 112px 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; max-width: 1440px; margin: 0 auto; }
+  .cta h2 { font-size: 48px; line-height: 1.2; margin-bottom: 24px; }
+  .cc { --u: clamp(110px, 12vw, 170px); position: relative; width: calc(var(--u) * 3); height: calc(var(--u) * 3); margin-left: auto; }
+  .cp { position: absolute; left: 33.3333%; top: 33.3333%; width: 66.6667%; height: 66.6667%; z-index: 2; overflow: hidden; }
+  .cp img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .cb { position: absolute; width: 33.3333%; height: 33.3333%; z-index: 1; }
+  .cb-a { left: 0; top: 33.3333%; background: var(--color--brand--light-blue); }
+  .cb-b { left: 33.3333%; top: 0; background: var(--color--brand--orange); border-radius: 100% 0 0 0; transform-origin: 100% 100%; }
+  .cb-c { left: 66.6667%; top: 0; border: 9px solid var(--color--brand--yellow); }
+  .seal-cta { left: calc(var(--u) * -.45); top: calc(var(--u) * .25); }
+  .seal-cta img { filter: brightness(0) invert(1); }
+  /* Testimonials */
+  .tm-in { padding: 100px 64px 160px; max-width: 1440px; margin: 0 auto; }
+  .tm h2 { font-size: 48px; text-align: center; margin-bottom: 64px; }
+  .tcards { display: grid; max-width: 760px; margin: 0 auto; }
+  .tcard { grid-area: 1 / 1; min-height: 340px; padding: 40px; background: var(--color--brand--yellow); }
+  .tcard blockquote { margin: 0 0 32px; font-size: 20px; font-weight: 700; }
+  .tdots { display: flex; justify-content: center; gap: 12px; margin-top: 48px; }
+  .tdot { width: 10px; height: 10px; background: rgba(0,0,0,.2); color: var(--color--brand--blue); cursor: pointer; }
+  .tm .arrows { position: absolute; right: 40px; bottom: 40px; }
+  footer { height: 400px; background: #eee; }
+  @media (max-width: 991px) {
+    .wrap, .note { padding: 0 40px; }
+    .hero-in { flex-direction: column; align-items: stretch; gap: 64px; padding: 72px 40px 96px; }
+    .hero-content h1 { font-size: 52px; }
+    .hc { --u: 140px; margin: 0 auto; }
+    .problem-in { grid-template-columns: minmax(0, 1fr); gap: 48px; padding: 96px 40px; }
+    .pt { order: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .tile { font-size: 17px; padding: 20px 18px; }
+    .mset { gap: 44px; padding-right: 44px; } .mlogo { width: 72px; height: 72px; }
+    .inner { grid-template-columns: minmax(0, 1fr); gap: 40px; padding: 0 40px; }
+    .scene-rev .copy { order: 0; } .comp, .scene-rev .comp { --u: 120px; justify-self: center; }
+    .ps-in { padding: 96px 40px; }
+    .ps-stack { flex-direction: column; aspect-ratio: auto; height: 760px; }
+    .ps-num { font-size: 48px; } .ps-label { font-size: 28px; } .ps-v { display: none; }
+    .ps-detail { inset: 16px 0 0 0; }
+    .ps-dt { width: 60%; padding: calc(36px + 48px) 24px 28px var(--pad); }
+    .ps-ill { right: 32px; bottom: 28px; height: calc(62% * var(--r)); }
+    .growth-in { padding: 96px 40px; }
+    .gc { --u: min(100px, calc((100vw - 80px) / 7.5)); }
+    .cs-in { padding: 96px 40px 0; }
+    .cd { width: min(720px, calc(100% - 80px)); max-height: calc(100svh - 80px); }
+    .cd-in { --u: min(150px, calc((min(720px, 100vw - 80px) - 80px) / 3)); grid-template-columns: minmax(0, 1fr); gap: 40px; padding: 96px 40px 40px; }
+    .cd-gallery { order: -1; justify-self: center; }
+    .cd h3 { font-size: 40px; }
+    .cd-foot { padding: 0 40px; }
+    .cta-in { grid-template-columns: minmax(0, 1fr); gap: 72px; padding: 96px 40px; }
+    .cc { --u: 140px; margin: 0 auto; }
+    .tm-in { padding: 96px 40px 136px; }
+  }
+  @media (max-width: 767px) {
+    .wrap, .note { padding: 0 20px; }
+    .btn { font-size: 16px; padding: 12px 20px; }
+    .hero-btns { flex-direction: column; }
+    .hero-in { padding: 48px 20px 72px; }
+    .hero-content h1 { font-size: 40px; }
+    .hc { --u: calc((100vw - 40px) / 3.5); }
+    .problem-in { padding: 72px 20px; }
+    .pt { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mset { gap: 36px; padding-right: 36px; } .mlogo { width: 60px; height: 60px; }
+    .inner { padding: 0 20px; } .comp, .scene-rev .comp { --u: calc((100vw - 40px) / 4.6); }
+    .ps-in { padding: 72px 20px; }
+    .ps-stack { height: 780px; }
+    .ps-num { font-size: 40px; } .ps-label { font-size: 24px; }
+    .ps-dt { width: 100%; padding: calc(36px + 40px) 20px 24px var(--pad); }
+    .ps-ill { display: none; }
+    .growth-in { padding: 72px 20px; }
+    .gc { --u: calc((100vw - 40px) / 7.5); }
+    .cs-in { padding: 72px 20px 0; }
+    .cg { height: 448px; }
+    .cg-tile { width: 200px; height: 200px; }
+    .cg-over { opacity: 1; padding: 14px; }
+    .cd { width: calc(100% - 24px); max-height: calc(100svh - 24px); }
+    .cd-in { --u: calc((100vw - 64px) / 3); gap: 32px; padding: 80px 20px 32px; }
+    .cd h3 { font-size: 30px; }
+    .cd-foot { padding: 0 20px; }
+    .cta-in { padding: 72px 20px; }
+    .cc { --u: calc((100vw - 40px) / 3.5); }
+    .tm-in { padding: 72px 20px 120px; }
+    .tcard { min-height: 0; padding: 28px 24px; }
+    .tm .arrows { right: 20px; bottom: 32px; }
+  }
+</style>
+<!-- De css uit docs/code.md voor de embed "CSS - Home" -->
+<style>
+@media (prefers-reduced-motion: no-preference) {
+  html.w-mod-js:not(.wf-design-mode):not([data-p-ready]) :is([data-p-block], [data-p-rise], [data-p-clip], [data-p-product]) { visibility: hidden; animation: p-show 0s 3s forwards; }
+}
+html.w-mod-js:not(.wf-design-mode):not([data-p-ready]) :is([data-p-photos] img ~ img, [data-p-photos] div ~ div img, [data-p-tcard] ~ [data-p-tcard]) { visibility: hidden; animation: p-show 0s 3s forwards; }
+@keyframes p-show { to { visibility: visible; } }
+html [data-p-case-modal]:not([data-p-open]), html [data-p-case-backdrop]:not([data-p-open]) { display: none; }
+</style>
+</head>
+<body>
+<p class="note">home.js test. Controle: <span id="result">bezig...</span></p>
+
+<section class="hero"><div class="hero-in">
+  <div class="hero-content">
+    <h1>Gemotiveerde mensen maken het verschil</h1>
+    <p>Profile Dynamics maakt zichtbaar wat mensen drijft.</p>
+    <div class="hero-btns">
+      <a class="btn btn-f" href="#" data-p-btn="true" id="btnF"><span class="btn-fill" data-p-btn-fill></span>Begin met één team<svg class="btn-icon" data-p-btn-icon viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 8h13M9 3l5 5-5 5"/></svg></a>
+      <a class="btn btn-o" href="#" data-p-btn id="btnO"><span class="btn-fill" data-p-btn-fill></span>Praat met een expert<svg class="btn-icon" data-p-btn-icon viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 8h13M9 3l5 5-5 5"/></svg></a>
+    </div>
+  </div>
+  <div class="hc" data-p-reveal id="heroComp">
+    <div class="hp" data-p-photos="true">
+      <img alt="Drie collega's in gesprek" src="../../design/homepage/assets/img/hero-gesprek-kleur.jpg">
+      <img alt="Kok garneert een gerecht" src="../../design/homepage/assets/img/hero-keuken.jpg">
+      <img alt="Twee collega's met helm" src="../../design/homepage/assets/img/hero-bouw.jpg">
+      <img alt="Technicus aan een printplaat" src="../../design/homepage/assets/img/hero-techniek.jpg">
+    </div>
+    <div class="hb hb-y" data-p-block data-p-x="-100" data-p-delay="0.15"></div>
+    <div class="hb hb-g" data-p-block data-p-x="-100" data-p-delay="0.35"></div>
+    <div class="hb hb-p" data-p-block data-p-rot="90" data-p-delay="0.55"></div>
+    <div class="hb hb-o" data-p-block data-p-x="100" data-p-delay="0.75"></div>
+  </div>
+</div></section>
+
+<section class="problem"><div class="problem-in">
+  <div><h2>Wat je ziet is het gevolg, niet de oorzaak</h2><p>Onder de oppervlakte zit wat mensen daadwerkelijk drijft.</p></div>
+  <div class="pt" data-p-reveal id="tiles">
+    <div class="tile" style="background:var(--color--brand--orange)" data-p-rise data-p-delay="0">“Wij kampen met uitval”</div>
+    <div class="tile" style="background:var(--color--brand--light-blue)" data-p-rise="true" data-p-delay="0.14">“Mijn team loopt niet”</div>
+    <div class="tile" style="background:var(--color--brand--yellow)" data-p-rise data-p-delay="0.28">“Deze manager komt hier niet uit de verf”</div>
+    <div class="tile" style="background:var(--color--brand--green)" data-p-rise data-p-delay="0.42">“Er is weerstand tegen verandering”</div>
+  </div>
+</div></section>
+
+<section class="logos">
+  <h2>Vertrouwd door toonaangevende organisaties</h2>
+  <div class="marquee" data-p-marquee id="marquee"><div class="mset" id="mset"></div></div>
+  <script>
+    ['nyenrode', 'universiteit-groningen', 'jawel', 'rainmen', 'ember', 'bestuursacademie', 'van-wijnen', 'cak', 'tno', 'gemeente-groningen'].concat(['nyenrode', 'universiteit-groningen', 'jawel', 'rainmen', 'ember', 'bestuursacademie', 'van-wijnen', 'cak', 'tno', 'gemeente-groningen']).forEach(function (n) {
+      document.getElementById('mset').insertAdjacentHTML('beforeend', '<img class="mlogo" src="../../design/homepage/assets/klanten/' + n + '.png" alt="' + n + '" width="256" height="256">');
+    });
+  </script>
+</section>
+
+<section class="pin">
+  <div class="scene"><div class="inner" data-p-reveal data-p-group="drivers" id="rowA">
+    <div class="comp">
+      <div class="photo"><img alt="Man met gekleurde plaatjes" src="../../design/homepage/assets/img/drivers-a-man.jpg"></div>
+      <div class="blk a1" data-p-block data-p-x="100" data-p-delay="0.15"></div>
+      <div class="blk a2" data-p-block data-p-rot="-90" data-p-delay="0.35"></div>
+      <div class="blk a3" data-p-block data-p-rot="90" data-p-delay="0.55"></div>
+    </div>
+    <div class="copy"><h2>Alles begint bij wat mensen drijft</h2><p>Waar iemand energie van krijgt, waar hij of zij op afhaakt.</p></div>
+  </div></div>
+  <div class="scene scene-rev"><div class="inner" data-p-reveal data-p-group="drivers" id="rowB">
+    <div class="comp">
+      <div class="photo"><img alt="Drie collega's op een dakterras" src="../../design/homepage/assets/img/drivers-b-dakterras.jpg"></div>
+      <div class="blk b1" data-p-block data-p-x="-100" data-p-delay="0.15"></div>
+      <div class="blk b2" data-p-block data-p-rot="-90" data-p-delay="0.35"><svg viewBox="0 0 150 150" aria-hidden="true"><path d="M4.5 4.5A141 141 0 0 1 145.5 145.5H4.5Z" fill="none" stroke="#FFA023" stroke-width="9"/></svg></div>
+      <div class="blk b3" data-p-block data-p-x="100" data-p-delay="0.55"></div>
+      <div class="seal seal-b" data-p-seal="true" data-p-block="true" data-p-scale="0.7" data-p-fade="true" data-p-delay="0.9" aria-hidden="true" id="sealB"><img data-p-seal-ring src="../../design/homepage/assets/logo/pd-seal-ring.svg" alt=""><img src="../../design/homepage/assets/logo/pd-seal-pd.svg" alt=""></div>
+    </div>
+    <div class="copy"><h2>Profile Dynamics maakt drijfveren werkbaar</h2><p>Profile Dynamics maakt zichtbaar wat mensen beweegt.</p></div>
+  </div></div>
+</section>
+
+<section class="ps"><div class="ps-in">
+  <h2>Profile Dynamics Product Suite</h2>
+  <div class="ps-stack" data-p-products id="stack">
+    <div class="ps-panel c-red" data-p-product><span class="ps-num" data-p-product-num>01</span><span class="ps-label" data-p-product-label>Personal</span><span class="ps-label ps-v" data-p-product-vlabel aria-hidden="true">Personal</span>
+      <div class="ps-detail" data-p-product-detail><div class="ps-dt"><h3>Personal</h3><p>Begrijp wat mensen persoonlijk drijft.</p><ul><li>Betere gesprekken</li><li>Sterker leiderschap</li></ul><a class="btn btn-f btn-s" href="#" data-p-btn><span class="btn-fill" data-p-btn-fill style="background:var(--color--brand--red)"></span>Meer over Personal<svg class="btn-icon" data-p-btn-icon viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 8h13M9 3l5 5-5 5"/></svg></a></div><img class="ps-ill" data-p-product-ill src="../../design/homepage/assets/img/illustratie-personal.webp" alt="" style="--r:.833"></div></div>
+    <div class="ps-panel c-orange" data-p-product><span class="ps-num" data-p-product-num>02</span><span class="ps-label" data-p-product-label>Teams</span><span class="ps-label ps-v" data-p-product-vlabel aria-hidden="true">Teams</span>
+      <div class="ps-detail" data-p-product-detail><div class="ps-dt"><h3>Teams</h3><p>Zie hoe de drijfveren binnen een team op elkaar inwerken.</p><ul><li>Zicht op samenwerking</li><li>Inzicht in waar het wringt</li></ul></div><img class="ps-ill" data-p-product-ill src="../../design/homepage/assets/img/illustratie-team.webp" alt="" style="--r:.837"></div></div>
+    <div class="ps-panel c-yellow" data-p-product><span class="ps-num" data-p-product-num>03</span><span class="ps-label" data-p-product-label>Jobs</span><span class="ps-label ps-v" data-p-product-vlabel aria-hidden="true">Jobs</span>
+      <div class="ps-detail" data-p-product-detail><div class="ps-dt"><h3>Jobs</h3><p>Breng in kaart wat een functie echt vraagt.</p><ul><li>Helder wat een functie vraagt</li></ul></div><img class="ps-ill" data-p-product-ill src="../../design/homepage/assets/img/illustratie-job.webp" alt="" style="--r:.824"></div></div>
+    <div class="ps-panel c-lb" data-p-product><span class="ps-num" data-p-product-num>04</span><span class="ps-label" data-p-product-label>Company</span><span class="ps-label ps-v" data-p-product-vlabel aria-hidden="true">Company</span>
+      <div class="ps-detail" data-p-product-detail><div class="ps-dt"><h3>Company</h3><p>Krijg zicht op de drijfveren in de hele organisatie.</p><ul><li>Basis voor cultuur</li></ul></div><img class="ps-ill" data-p-product-ill src="../../design/homepage/assets/img/illustratie-company.webp" alt="" style="--r:1.12"></div></div>
+  </div>
+</div></section>
+
+<section class="growth"><div class="growth-in">
+  <h2>Het begint klein. Het eindigt groot.</h2>
+  <div class="gc" data-p-reveal id="growth">
+    <div class="gp" data-p-clip="left" data-p-delay="1.5"><img alt="Lachende vrouw met een document" src="../../design/homepage/assets/img/growth-gesprek.jpg"></div>
+    <div class="gb g-turq" data-p-block data-p-scale="0" data-p-delay="0.9"></div>
+    <div class="gb g-oq" data-p-block data-p-scale="0" data-p-rot="90" data-p-delay="1.2"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M98 98H2A96 96 0 0 1 98 2Z" fill="none" stroke="#FFA023" stroke-width="3.9"/></svg></div>
+    <div class="gb g-red" data-p-block data-p-scale="0" data-p-delay="0.6"></div>
+    <div class="gb g-pur" data-p-block data-p-scale="0" data-p-delay="0.3"></div>
+    <div class="gb g-yel" data-p-block data-p-scale="0" data-p-delay="0"></div>
+  </div>
+</div></section>
+
+<section class="cs" data-p-cases id="cases">
+  <div class="cs-in"><h2>Case studies</h2><div class="cs-intro"><p>Zie hoe organisaties met Profile Dynamics grip kregen op wat hun mensen drijft.</p></div></div>
+  <div class="cg" data-p-cases-grid id="grid"><p class="cg-hint" data-p-cases-hint>Sleep om te verkennen</p></div>
+  <!-- Verborgen CMS-lijst (Webflow: Collection List met display none) -->
+  <div class="cs-list" id="csList"></div>
+  <script>
+    [['hero-keuken', 'hero-techniek', 'drivers-a-man'], ['hero-bouw', 'drivers-b-dakterras', 'drivers-c-kantoor'], ['growth-gesprek', 'hero-gesprek-kleur', 'hero-postits'], ['hero-techniek', 'drivers-a-man', 'hero-keuken'], ['drivers-b-dakterras', 'drivers-c-kantoor', 'hero-bouw'], ['hero-gesprek-kleur', 'hero-postits', 'growth-gesprek'], ['drivers-a-man', 'hero-keuken', 'hero-techniek'], ['drivers-c-kantoor', 'hero-bouw', 'drivers-b-dakterras'], ['hero-postits', 'growth-gesprek', 'hero-gesprek-kleur']].forEach(function (p, i) {
+      var n = ('0' + (i + 1)).slice(-2), img = function (f) { return '<img src="../../design/homepage/assets/img/' + f + '.jpg" alt="" loading="lazy">'; };
+      document.getElementById('csList').insertAdjacentHTML('beforeend',
+        '<div class="w-dyn-item" data-p-case>' +
+          '<a class="cg-tile" href="/case-studies/test-' + n + '" data-p-case-tile>' + img(p[0]) + '<span class="cg-over" data-p-case-over><span class="cg-tag">Case study</span><span class="cg-title">Titel van case study ' + n + '</span></span></a>' +
+          '<div data-p-case-field="title">Titel van case study ' + n + '</div><div data-p-case-field="tag">Case study</div><div data-p-case-field="org">Organisatie ' + n + ' · Sector</div>' +
+          '<div data-p-case-field="text">Concepttekst van case ' + n + '.</div><div data-p-case-field="challenge">Uitdaging van case ' + n + '.</div><div data-p-case-field="approach">Aanpak van case ' + n + '.</div><div data-p-case-field="result">Resultaat van case ' + n + '.</div>' +
+          '<div data-p-case-field="photos">' + p.map(img).join('') + '</div>' +
+        '</div>');
+    });
+  </script>
+  <div class="cd" data-p-case-modal id="modal">
+    <button type="button" class="arrow cd-close" data-p-case-close data-p-btn aria-label="Sluiten"><svg viewBox="0 0 16 16" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 2l12 12M14 2L2 14"/></svg></button>
+    <div class="cd-in">
+      <div>
+        <span class="cd-tag" data-p-case-field="tag" data-p-rise="16" data-p-delay="0.25"></span>
+        <h3 data-p-case-field="title" data-p-rise="16" data-p-delay="0.35"></h3>
+        <p class="cd-org" data-p-case-field="org" data-p-rise="16" data-p-delay="0.45"></p>
+        <p class="cd-text" data-p-case-field="text" data-p-rise="16" data-p-delay="0.55"></p>
+        <dl class="cd-facts" data-p-rise="16" data-p-delay="0.65"><div><dt>Uitdaging</dt><dd data-p-case-field="challenge"></dd></div><div><dt>Aanpak</dt><dd data-p-case-field="approach"></dd></div><div><dt>Resultaat</dt><dd data-p-case-field="result"></dd></div></dl>
+      </div>
+      <div class="cd-gallery">
+        <span class="cd-b cd-b1" data-p-block data-p-x="-100" data-p-delay="0.45"></span><span class="cd-b cd-b2" data-p-block data-p-x="-100" data-p-delay="0.6"></span><span class="cd-b cd-b3" data-p-block data-p-rot="90" data-p-delay="0.75"></span>
+        <div class="cd-slides" data-p-case-field="photos"></div>
+      </div>
+    </div>
+    <div class="cd-foot"><span class="cd-num" data-p-case-num></span>
+      <div class="arrows">
+        <button type="button" class="arrow arrow-prev" data-p-btn data-p-prev aria-label="Vorige case study"><svg class="btn-icon" data-p-btn-icon viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 8H2M7 3L2 8l5 5"/></svg></button>
+        <button type="button" class="arrow" data-p-btn data-p-next aria-label="Volgende case study"><svg class="btn-icon" data-p-btn-icon viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 8h13M9 3l5 5-5 5"/></svg></button>
+      </div>
+    </div>
+  </div>
+  <div class="cd-bg" data-p-case-backdrop id="backdrop"></div>
+</section>
+
+<section class="cta"><div class="cta-in">
+  <div><h2>Begin bij één team. Bouw aan de hele organisatie.</h2><p>Begin met één team of één vraagstuk.</p></div>
+  <div class="cc" data-p-reveal id="ctaComp">
+    <div class="cp"><img alt="Vier collega's lachen" src="../../design/homepage/assets/img/cta-team.jpg"></div>
+    <div class="cb cb-a" data-p-block data-p-x="100" data-p-delay="0.15"></div>
+    <div class="cb cb-b" data-p-block data-p-rot="-90" data-p-delay="0.35"></div>
+    <div class="cb cb-c" data-p-block data-p-y="100" data-p-delay="0.55"></div>
+    <div class="seal seal-cta" data-p-seal data-p-block data-p-scale="0.7" data-p-fade="1" data-p-delay="0.9" aria-hidden="true"><img data-p-seal-ring src="../../design/homepage/assets/logo/pd-seal-ring.svg" alt=""><img src="../../design/homepage/assets/logo/pd-seal-pd.svg" alt=""></div>
+  </div>
+</div></section>
+
+<section class="tm" data-p-testimonials id="tm"><div class="tm-in">
+  <h2>Klant-testimonials</h2>
+  <div class="tcards">
+    <div class="tcard" data-p-tcard><blockquote>“Het geeft ons houvast bij werving.”</blockquote><b>Lotte Bakker</b></div>
+    <div class="tcard" data-p-tcard><blockquote>“Eindelijk hebben we een taal om over motivatie te praten.”</blockquote><b>Sanne de Vries</b></div>
+    <div class="tcard" data-p-tcard><blockquote>“De uitkomsten waren herkenbaar en meteen bruikbaar.”</blockquote><b>Mark Jansen</b></div>
+  </div>
+  <div class="tdots" aria-hidden="true"><i class="tdot" data-p-tdot></i><i class="tdot" data-p-tdot></i></div>
+</div>
+<div class="arrows">
+  <button type="button" class="arrow arrow-prev" data-p-btn data-p-prev aria-label="Vorige testimonial"><svg class="btn-icon" data-p-btn-icon viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 8H2M7 3L2 8l5 5"/></svg></button>
+  <button type="button" class="arrow" data-p-btn data-p-next aria-label="Volgende testimonial"><svg class="btn-icon" data-p-btn-icon viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 8h13M9 3l5 5-5 5"/></svg></button>
+</div></section>
+<footer></footer>
+
+<!-- Zoals de site-footer: GSAP 3.12.2, ScrollTrigger 3.11.4 en Lenis 1.0.36 met een globale `let lenis` -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.36/dist/lenis.min.js"></script>
+<script>
+  let lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 0.7, gestureOrientation: 'vertical', normalizeWheel: false, smoothTouch: false });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+  window.__errors = [];
+  window.addEventListener('error', function (e) { window.__errors.push(String(e.message)); });
+  var realError = console.error;
+  console.error = function () { window.__errors.push(String(arguments[0])); realError.apply(console, arguments); };
+</script>
+<!-- Paginacode zoals in de footer van home-nieuw (lokaal het gewone bestand, op jsDelivr home.min.js) -->
+<script type="module">
+  import { ready } from '../home/home.js';
+  ready.then(function () {
+    var ok = document.documentElement.hasAttribute('data-p-ready') && !window.__errors.length;
+    document.getElementById('result').textContent = ok ? 'geladen, geen fouten' : 'FOUT: ' + window.__errors.join(' | ');
+  });
+</script>
+</body>
+</html>
